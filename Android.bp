@@ -1,0 +1,40 @@
+config_opts = "--without-pkg-config --with-ncursesw"
+
+dialog_cflags = [
+    "-D_DEFAULT_SOURCE",
+    "-D_XOPEN_SOURCE_EXTENDED",
+    "-D_XOPEN_SOURCE=500",
+    "-DHAVE_CONFIG_H",
+    "-DLOCALEDIR=\"/vendor/etc/locale\"",
+]
+
+gen_headers = [
+    "dlg_config.h",
+]
+
+genrule {
+    name: "dialog_gen_headers",
+    cmd:  "export PATH=/usr/bin:/bin:$$PATH && "
+       + "cp -r external/dialog/. $(genDir);"
+       + "cd $(genDir) && "
+       + "./configure " + config_opts + " && "
+       + "./configure " + config_opts + " --prefix=/system",
+    srcs: ["**/*"],
+    out: gen_headers,
+}
+
+// Define the module type for tput
+cc_binary {
+    name: "dialog",
+    srcs: [
+        "**/*.c",
+    ],
+    exclude_srcs: [
+        "samples/install/setup.c",
+    ],
+    cflags: dialog_cflags,
+    shared_libs: [
+        "libncurses",
+    ],
+    generated_headers: ["dialog_gen_headers"],
+}
